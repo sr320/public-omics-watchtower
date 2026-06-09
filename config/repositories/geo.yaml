@@ -3,9 +3,10 @@ enabled: true
 database: gds
 data_type_filter: rnaseq
 query_template: |
-  ("{organism}"[Organism] OR "{taxonomy_id}"[Organism]) AND
-  ("expression profiling by high throughput sequencing"[DataSet Type] OR
-   "RNA-seq"[Description] OR "transcriptome"[Description])
+  ("{organism}"[orgn] OR "{taxonomy_id}"[orgn]) AND
+  ("expression profiling by high throughput sequencing"[gdstype] OR
+   "RNA-seq"[description] OR "transcriptome"[description]) AND
+  gse[entry_type]
 retmax: 100
 field_mapping:
   accession: Accession

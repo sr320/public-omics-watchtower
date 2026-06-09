@@ -5,8 +5,6 @@ from __future__ import annotations
 import os
 import xml.etree.ElementTree as ET
 from typing import Any
-from urllib.parse import urlencode
-
 import requests
 
 from watchtower.discovery.base import RateLimiter
@@ -40,8 +38,8 @@ class EntrezClient:
     def _get(self, endpoint: str, params: dict[str, Any]) -> str:
         self.rate_limiter.wait()
         full_params = {**self._base_params(), **params}
-        url = f"{ENTREZ_BASE}/{endpoint}?{urlencode(full_params)}"
-        response = self.session.get(url, timeout=60)
+        url = f"{ENTREZ_BASE}/{endpoint}"
+        response = self.session.post(url, data=full_params, timeout=60)
         response.raise_for_status()
         return response.text
 

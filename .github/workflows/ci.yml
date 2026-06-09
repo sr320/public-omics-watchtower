@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check watchtower tests
+
+      - name: Validate configuration
+        run: watchtower config validate
+
+      - name: Pytest
+        run: pytest tests/
+
+  nextflow-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: nf-core/setup-nextflow@v2
+
+      - name: Validate Nextflow config
+        run: nextflow config pipelines/rnaseq/main.nf -profile mac_arm64

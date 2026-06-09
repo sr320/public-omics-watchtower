@@ -1,1 +1,107 @@
 # public-omics-watchtower
+
+Autonomous public omics discovery platform for marine genomics and aquaculture research.
+
+Continuously monitors NCBI SRA and GEO, prioritizes datasets relevant to marine stress biology, downloads selected studies, and runs reproducible Salmon + DESeq2 workflows on Apple Silicon Mac minis—with GitHub Issues as the distributed work queue.
+
+## Phase 1 Scope
+
+- **Species:** *Crassostrea gigas* (Pacific oyster)
+- **Data:** RNA-seq from SRA and GEO
+- **Pipeline:** Salmon → DESeq2 → GO enrichment
+- **Outputs:** DEG tables, PCA/volcano plots, GO enrichment, Markdown reports, weekly digests
+
+## Quick Start
+
+```bash
+# Install
+pip install -e ".[dev]"
+
+# Validate configuration
+watchtower config validate
+
+# Run discovery (local, no GitHub token required for DB-only mode)
+watchtower discover --no-create-issue
+
+# Check status
+watchtower status
+
+# Run worker (one job)
+watchtower worker run --node-id oyster-mini-01 --once
+```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, data flow, security, and component details |
+| [ROADMAP.md](ROADMAP.md) | Phase 1–3 delivery plan and timeline |
+| [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md) | Directory layout and file reference |
+| [MILESTONES.md](MILESTONES.md) | Development milestones and success criteria |
+
+## Architecture
+
+- **Control plane:** GitHub (config, code, Issues queue, Actions)
+- **Workers:** Mac minis with launchd-managed `watchtower worker` daemons
+- **State:** SQLite per node (cache); GitHub Issues authoritative for jobs
+- **Pipelines:** Nextflow with `mac_arm64` profile
+
+```
+discover → download → analyze → report → weekly digest
+```
+
+## Repository Layout
+
+```
+config/          YAML configuration (species, repos, scoring, nodes)
+watchtower/      Python orchestration package
+pipelines/       Nextflow workflows
+schemas/         SQLite DDL and JSON Schema
+templates/       Jinja2 report templates
+deploy/          Mac mini bootstrap and launchd
+docs/            Architecture and operations guides
+```
+
+## Mac Mini Deployment
+
+See [deploy/docs/node_setup.md](deploy/docs/node_setup.md).
+
+```bash
+./deploy/macos/bootstrap.sh
+./deploy/macos/install_worker.sh --node-id oyster-mini-01
+```
+
+## CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `watchtower config validate` | Validate YAML configuration |
+| `watchtower discover` | Search SRA/GEO and score datasets |
+| `watchtower status` | Show local database summary |
+| `watchtower worker run` | Run worker daemon |
+| `watchtower worker housekeeping` | Reclaim stale job claims |
+| `watchtower report --weekly` | Generate weekly digest |
+| `watchtower retry <job_id>` | Re-queue a failed job |
+| `watchtower github store-token` | Save PAT to macOS Keychain |
+
+## Development
+
+```bash
+make install
+make lint
+make test
+make validate
+```
+
+## Multi-Node Example
+
+| Node | Role |
+|------|------|
+| `oyster-mini-01` | discovery + download |
+| `oyster-mini-02` | analysis + report |
+
+Configure capabilities in `config/nodes/<node_id>.yaml`.
+
+## License
+
+MIT — University of Washington Marine Genomics Laboratory

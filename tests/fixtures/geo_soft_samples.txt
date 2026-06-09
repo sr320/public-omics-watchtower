@@ -1,0 +1,8 @@
+^SAMPLE = GSM1234567
+!Sample_title = oyster control rep1
+!Sample_source_name_ch1 = gill
+!Sample_characteristics_ch1 = condition: control
+^SAMPLE = GSM1234568
+!Sample_title = oyster heat stress rep1
+!Sample_source_name_ch1 = gill
+!Sample_characteristics_ch1 = condition: heat stress

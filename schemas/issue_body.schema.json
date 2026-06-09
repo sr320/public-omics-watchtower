@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sr320/public-omics-watchtower/schemas/issue_body.schema.json",
+  "title": "WatchtowerJobIssueBody",
+  "type": "object",
+  "required": [
+    "job_id",
+    "job_type",
+    "species",
+    "schema_version"
+  ],
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job_type": {
+      "type": "string",
+      "enum": ["discover", "download", "analyze", "report"]
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

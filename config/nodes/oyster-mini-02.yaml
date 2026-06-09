@@ -1,0 +1,13 @@
+node_id: oyster-mini-02
+hostname: oyster-mini-02.local
+data_root: /Volumes/omics/watchtower
+capabilities:
+  job_types:
+    - analyze
+    - report
+  max_concurrent_jobs: 2
+  storage_gb_free_min: 200
+  preferred_species:
+    - crassostrea_gigas
+profiles:
+  - mac_arm64

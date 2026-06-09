@@ -1,0 +1,7 @@
+provider: null
+enabled: false
+model: null
+max_tokens: 2048
+system_prompt: |
+  You are a marine genomics expert writing biological summaries of
+  differential expression results for aquaculture and environmental stress research.

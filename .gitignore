@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+
+# Local data (never commit raw omics data)
+/data/
+/Volumes/
+*.fastq
+*.fastq.gz
+*.bam
+*.sam
+
+# SQLite local DBs
+*.db
+*.sqlite
+*.sqlite3
+
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+trace.txt
+report.html
+timeline.html
+dag.dot
+
+# Conda
+.environment/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

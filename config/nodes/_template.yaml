@@ -1,0 +1,14 @@
+node_id: CHANGE_ME
+hostname: CHANGE_ME.local
+data_root: /Volumes/omics/watchtower
+capabilities:
+  job_types:
+    - discover
+    - download
+    - analyze
+    - report
+  max_concurrent_jobs: 2
+  storage_gb_free_min: 200
+  preferred_species: []
+profiles:
+  - mac_arm64

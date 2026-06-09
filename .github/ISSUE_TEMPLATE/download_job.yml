@@ -1,0 +1,29 @@
+name: Download Job
+description: Download a public dataset for analysis
+title: "[download] "
+labels:
+  - job:download
+  - status:queued
+body:
+  - type: input
+    id: accession
+    attributes:
+      label: Accession
+      placeholder: SRR12345678 or GSE12345
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      options:
+        - sra
+        - geo
+    validations:
+      required: true
+  - type: dropdown
+    id: species
+    attributes:
+      label: Species
+      options:
+        - crassostrea_gigas

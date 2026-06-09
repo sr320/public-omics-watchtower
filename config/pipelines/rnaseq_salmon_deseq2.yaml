@@ -1,0 +1,41 @@
+pipeline_id: rnaseq_salmon_deseq2
+version: v1
+nextflow:
+  main: pipelines/rnaseq/main.nf
+  config: pipelines/rnaseq/nextflow.config
+  profile: mac_arm64
+
+salmon:
+  libtype: A
+  validate_mappings: true
+  seq_bias: true
+
+deseq2:
+  min_count: 10
+  alpha: 0.05
+  lfc_threshold: 1.0
+  independent_filtering: true
+
+contrasts:
+  default: treatment_vs_control
+  patterns:
+    - name: treatment_vs_control
+      numerator: treatment
+      denominator: control
+
+enrichment:
+  organism_db: org.Cg.eg.db
+  ontology: GO
+  pvalue_cutoff: 0.05
+  qvalue_cutoff: 0.2
+
+qc:
+  fastqc: true
+  multiqc: true
+
+outputs:
+  - deg_table
+  - pca_plot
+  - volcano_plot
+  - go_enrichment
+  - study_report

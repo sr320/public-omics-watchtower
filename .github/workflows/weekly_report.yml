@@ -1,0 +1,64 @@
+name: Weekly Report
+
+on:
+  schedule:
+    - cron: "0 8 * * MON"
+  workflow_dispatch:
+
+jobs:
+  weekly-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Generate weekly digest
+        run: |
+          mkdir -p data
+          python -c "
+          from pathlib import Path
+          from watchtower.db.connection import connect
+          from watchtower.db.store import Store
+          from watchtower.reporting.weekly import generate_weekly_digest
+          conn = connect(Path('data/watchtower.db'))
+          store = Store(conn)
+          path = generate_weekly_digest(store, Path('data/reports'))
+          print('Generated', path)
+          "
+
+      - name: Publish weekly issue
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from watchtower.config.loader import load_watchtower_config
+          from watchtower.db.connection import connect
+          from watchtower.db.store import Store
+          from watchtower.reporting.weekly import generate_weekly_digest, publish_weekly_issue
+          from watchtower.queue.github_issues import GitHubIssuesQueue
+
+          wt = load_watchtower_config()
+          conn = connect(Path("data/watchtower.db"))
+          store = Store(conn)
+          path = generate_weekly_digest(store, Path("data/reports"))
+          queue = GitHubIssuesQueue(
+              owner=wt["github"]["owner"],
+              repo=wt["github"]["repo"],
+          )
+          issue = publish_weekly_issue(queue, path)
+          print(f"Published issue #{issue}")
+          PY
+
+      - name: Housekeeping — reclaim stale claims
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -c "from watchtower.housekeeping import run_housekeeping; print(run_housekeeping())"

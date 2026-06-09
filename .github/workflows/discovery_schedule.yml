@@ -1,0 +1,51 @@
+name: Scheduled Discovery
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger-discovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Validate config
+        run: watchtower config validate
+
+      - name: Create discovery job issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from watchtower.config.loader import load_watchtower_config
+          from watchtower.queue.github_issues import GitHubIssuesQueue
+          from watchtower.queue.models import QueueJob
+          from datetime import datetime, timezone
+
+          wt = load_watchtower_config()
+          queue = GitHubIssuesQueue(
+              owner=wt["github"]["owner"],
+              repo=wt["github"]["repo"],
+          )
+          ts = datetime.now(timezone.utc).strftime("%Y%m%d")
+          for species in wt.get("enabled_species", []):
+              job = QueueJob(
+                  job_id=f"discover:{species}:{ts}",
+                  job_type="discover",
+                  species=species,
+                  payload={"species": [species]},
+                  created_by="github-actions@watchtower",
+              )
+              num = queue.create_job(job, context_md=f"Scheduled discovery for {species}")
+              print(f"Created issue #{num} for {species}")
+          PY

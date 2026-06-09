@@ -1,0 +1,25 @@
+name: Discovery Job
+description: Search SRA/GEO for new datasets
+title: "[discover] "
+labels:
+  - job:discover
+  - status:queued
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Creates a discovery job. Workers will search public repositories
+        for species-matching RNA-seq datasets.
+  - type: dropdown
+    id: species
+    attributes:
+      label: Species
+      options:
+        - crassostrea_gigas
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional context for the discovery run

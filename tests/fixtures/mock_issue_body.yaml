@@ -1,0 +1,11 @@
+job_id: "SRR12345678:download:rnaseq_v1"
+job_type: download
+dataset_id: "sra:SRR12345678"
+species: crassostrea_gigas
+priority: 82
+payload:
+  source: sra
+  accession: SRR12345678
+  pipeline: rnaseq_salmon_deseq2
+created_by: test@watchtower
+schema_version: 1

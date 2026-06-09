@@ -1,0 +1,57 @@
+# Study Report: {{ accession }}
+
+**Species:** {{ species }}
+**Source:** {{ source }}
+**Generated:** {{ generated_at }}
+
+## Executive Summary
+
+{{ summary }}
+
+## Dataset Provenance
+
+- **Accession:** [{{ accession }}]({{ accession_url }})
+- **Title:** {{ title }}
+- **Relevance score:** {{ relevance_score }}
+
+## QC Summary
+
+MultiQC and FastQC outputs are in the `qc/` directory.
+
+## Differential Expression
+
+- Total genes tested: {{ total_genes }}
+- Significant DEGs: {{ significant_degs }}
+
+### Top DEGs
+
+| gene_id | log2FoldChange | padj |
+| --- | --- | --- |
+{% for gene in top_genes %}
+| {{ gene.gene_id }} | {{ gene.log2FoldChange }} | {{ gene.padj }} |
+{% endfor %}
+
+## Figures
+
+![PCA]({{ pca_plot }})
+![Volcano]({{ volcano_plot }})
+
+## GO Enrichment
+
+See `enrichment/go_enrichment.csv` for full results.
+
+{% if ai_summary %}
+## AI Biological Summary
+
+{{ ai_summary }}
+{% else %}
+## AI Biological Summary
+
+_AI interpretation not enabled in Phase 1._
+{% endif %}
+
+## Reproducibility
+
+- Pipeline: rnaseq_salmon_deseq2 v1
+- Run ID: {{ run_id }}
+- Git commit: {{ git_commit }}

@@ -1,0 +1,35 @@
+version: 1
+weights:
+  taxonomy_match: 30
+  keyword_match: 25
+  sample_count: 15
+  study_design: 15
+  recency: 15
+
+keyword_scoring:
+  max_points: 25
+  points_per_match: 5
+  max_matches: 5
+
+sample_count_scoring:
+  min_samples: 3
+  optimal_samples: 12
+  max_points: 15
+
+study_design_keywords:
+  controlled:
+    - treatment
+    - control
+    - stress
+    - exposed
+    - challenged
+  points: 15
+
+recency_years:
+  recent: 3
+  max_points: 15
+
+thresholds:
+  auto_queue: 60
+  high_priority: 75
+  skip_below: 20

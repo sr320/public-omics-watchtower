@@ -1,0 +1,16 @@
+species_id: crassostrea_gigas
+scientific_name: Crassostrea gigas
+genome_accession: GCF_000297895.1
+transcriptome_source: NCBI RefSeq
+transcriptome_url: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/297/895/GCF_000297895.1_ASM29789v2/
+salmon_index_path: /Volumes/omics/watchtower/references/crassostrea_gigas/salmon_index
+annotation:
+  gff: GCF_000297895.1_ASM29789v2_genomic.gff
+  note: >
+    Build Salmon index from RefSeq transcript sequences or lab-curated
+    transcriptome. See references/crassostrea_gigas/README.md.
+go_annotation:
+  status: pending
+  note: >
+    C. gigas lacks standard OrgDb; use custom annotation mapping or
+    ortholog-based GO transfer in Phase 2.

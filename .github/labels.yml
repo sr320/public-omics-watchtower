@@ -1,0 +1,42 @@
+# Standard label set — apply via gh label create or setup script
+# Job types
+- name: job:discover
+  color: "1D76DB"
+  description: Discovery job
+- name: job:download
+  color: "0E8A16"
+  description: Download job
+- name: job:analyze
+  color: "FBCA04"
+  description: Analysis job
+- name: job:report
+  color: "D93F0B"
+  description: Report job
+# Status
+- name: status:queued
+  color: "C5DEF5"
+  description: Ready to claim
+- name: status:running
+  color: "FEF2C0"
+  description: In progress
+- name: status:completed
+  color: "0E8A16"
+  description: Successfully completed
+- name: status:failed
+  color: "B60205"
+  description: Failed
+# Priority
+- name: priority:high
+  color: "B60205"
+- name: priority:normal
+  color: "FBCA04"
+- name: priority:low
+  color: "C5DEF5"
+# Species
+- name: species:crassostrea_gigas
+  color: "5319E7"
+  description: Pacific oyster
+# Other
+- name: needs:human
+  color: "E99695"
+  description: Requires manual review

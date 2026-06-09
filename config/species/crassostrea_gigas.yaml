@@ -1,0 +1,27 @@
+species_id: crassostrea_gigas
+scientific_name: Crassostrea gigas
+common_name: Pacific oyster
+taxonomy_id: 29159
+synonyms:
+  - Pacific oyster
+  - Crassostrea gigas
+  - Magallana gigas
+enabled_data_types:
+  - rnaseq
+stress_keywords:
+  - hypoxia
+  - heat stress
+  - thermal stress
+  - salinity
+  - ocean acidification
+  - pH stress
+  - pathogen
+  - disease
+  - immune
+  - oxidative stress
+  - desiccation
+  - low oxygen
+  - acidification
+  - Vibrio
+  - OsHV-1
+reference: references/crassostrea_gigas/manifest.yaml

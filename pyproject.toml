@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "public-omics-watchtower"
+version = "0.1.0"
+description = "Autonomous public omics discovery platform for marine genomics"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "UW Marine Genomics Laboratory" }]
+dependencies = [
+    "click>=8.1",
+    "pyyaml>=6.0",
+    "jsonschema>=4.20",
+    "requests>=2.31",
+    "jinja2>=3.1",
+    "python-dateutil>=2.8",
+    "keyring>=24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.1",
+    "mypy>=1.7",
+    "types-PyYAML",
+    "types-requests",
+    "types-python-dateutil",
+]
+
+[project.scripts]
+watchtower = "watchtower.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["watchtower*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["UP017"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

@@ -1,0 +1,19 @@
+name: Report Job
+description: Generate and sync study report
+title: "[report] "
+labels:
+  - job:report
+  - status:queued
+body:
+  - type: input
+    id: run_id
+    attributes:
+      label: Pipeline run ID
+    validations:
+      required: true
+  - type: input
+    id: outdir
+    attributes:
+      label: Results directory
+    validations:
+      required: true

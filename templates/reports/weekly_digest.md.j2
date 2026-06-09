@@ -1,0 +1,52 @@
+# Weekly Watchtower Digest — {{ report_id }}
+
+**Period:** {{ week_start }} to {{ week_end }}
+**Generated:** {{ generated_at }}
+
+## Overview
+
+- Completed studies this week: **{{ study_count }}**
+- New queued datasets: **{{ new_datasets | length }}**
+- Failed jobs: **{{ failed_jobs | length }}**
+
+## Completed Studies
+
+{% if completed_studies %}
+| Accession | Title | Score |
+| --- | --- | --- |
+{% for study in completed_studies %}
+| {{ study.accession }} | {{ study.title or 'N/A' }} | {{ study.relevance_score or 'N/A' }} |
+{% endfor %}
+{% else %}
+_No completed studies this period._
+{% endif %}
+
+## New High-Priority Datasets
+
+{% if new_datasets %}
+| Source | Accession | Title | Score |
+| --- | --- | --- | --- |
+{% for ds in new_datasets %}
+| {{ ds.source }} | {{ ds.accession }} | {{ ds.title or 'N/A' }} | {{ ds.score }} |
+{% endfor %}
+{% else %}
+_No new queued datasets._
+{% endif %}
+
+## Failed Jobs
+
+{% if failed_jobs %}
+| Job ID | Type | Error |
+| --- | --- | --- |
+{% for job in failed_jobs %}
+| {{ job.job_id }} | {{ job.type }} | {{ job.error or 'unknown' }} |
+{% endfor %}
+{% else %}
+_No failed jobs this period._
+{% endif %}
+
+## Next Steps
+
+- Review failed jobs with `needs:human` label
+- Verify Salmon index and reference annotations for C. gigas
+- Run `watchtower status` on worker nodes

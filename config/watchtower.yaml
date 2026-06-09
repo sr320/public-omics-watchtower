@@ -1,0 +1,38 @@
+# Global watchtower settings
+version: 1
+
+github:
+  owner: sr320
+  repo: public-omics-watchtower
+  reports_branch: reports
+
+paths:
+  app_root: .
+  config_dir: config
+  pipelines_dir: pipelines
+  templates_dir: templates
+  references_dir: references
+
+discovery:
+  poll_interval_hours: 24
+  max_results_per_query: 100
+  entrez_rate_limit_per_sec: 3
+  min_relevance_score: 40
+
+queue:
+  poll_interval_sec: 60
+  sync_interval_sec: 300
+  stale_claim_hours: 24
+  max_retries: 3
+  priority_thresholds:
+    high: 75
+    normal: 50
+    low: 0
+
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+phase: 1
+enabled_species:
+  - crassostrea_gigas

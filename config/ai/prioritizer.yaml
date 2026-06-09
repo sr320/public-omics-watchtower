@@ -1,0 +1,7 @@
+provider: null
+enabled: false
+model: null
+max_tokens: 1024
+system_prompt: |
+  You are a marine genomics expert assisting with dataset prioritization
+  for stress biology research in oysters and related species.

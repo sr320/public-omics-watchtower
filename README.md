@@ -85,7 +85,9 @@ See [deploy/docs/node_setup.md](deploy/docs/node_setup.md) for the full guide.
 ./deploy/macos/install_worker.sh --node-id oyster-mini-solo
 ```
 
-**Multi-node:** split roles across machines (e.g. `oyster-mini-01` for discovery/download, `oyster-mini-02` for analysis/report).
+**Multi-node — independent fleet:** add more Mac minis in different locations, each with all four `job_types` and its own disk (no shared drive). See [deploy/docs/node_setup.md](deploy/docs/node_setup.md#independent-fleet-full-pipeline-per-machine).
+
+**Multi-node — role-split cluster:** colocated Mac minis only, sharing one `data_root` volume — e.g. `oyster-mini-01` for discovery/download, `oyster-mini-02` for analysis/report.
 
 ## CLI Reference
 
@@ -109,7 +111,16 @@ make test
 make validate
 ```
 
-## Multi-Node Example
+## Multi-Node Examples
+
+**Independent fleet** (different sites, own disk each):
+
+| Node | Role |
+|------|------|
+| `oyster-mini-lab-a` | full pipeline |
+| `oyster-mini-lab-b` | full pipeline |
+
+**Role-split cluster** (same site, shared volume):
 
 | Node | Role |
 |------|------|

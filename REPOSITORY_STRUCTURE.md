@@ -50,9 +50,9 @@ config/
 ├── pipelines/
 │   └── rnaseq_salmon_deseq2.yaml   # Nextflow paths, Salmon/DESeq2 params, contrasts
 ├── nodes/
-│   ├── _template.yaml              # Node config template for new Mac minis
-│   ├── oyster-mini-01.yaml         # Node 1: discover + download
-│   └── oyster-mini-02.yaml         # Node 2: analyze + report
+│   ├── _template.yaml              # Node config template (full pipeline per node)
+│   ├── oyster-mini-01.yaml         # Role-split example: discover + download (shared storage)
+│   └── oyster-mini-02.yaml         # Role-split example: analyze + report (shared storage)
 └── ai/
     ├── prioritizer.yaml            # AI prioritization provider (stub in Phase 1)
     └── reporter.yaml               # AI report interpretation provider (stub)
@@ -299,7 +299,8 @@ These paths are created at runtime on worker nodes and are listed in `.gitignore
 |------|---------|
 | `config/watchtower.yaml` | Start here for global settings |
 | `config/species/crassostrea_gigas.yaml` | Phase 1 species profile |
-| `config/nodes/oyster-mini-01.yaml` | Worker node identity and capabilities |
+| `config/nodes/oyster-mini-01.yaml` | Role-split node example (requires shared `data_root`) |
+| `config/nodes/_template.yaml` | Full-pipeline node template for single or independent-fleet deploys |
 | `schemas/issue_body.schema.json` | Job issue validation schema |
 | `schemas/sqlite/001_initial.sql` | Database schema |
 | `watchtower/cli.py` | All operator commands |

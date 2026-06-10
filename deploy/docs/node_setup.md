@@ -1,6 +1,16 @@
 # Mac Mini Node Setup
 
-You can run public-omics-watchtower on **one Mac mini** (full pipeline) or split work across **multiple Mac minis** (discovery/download vs analysis/report). Start with a single node unless you need to scale out.
+You can run public-omics-watchtower on **one Mac mini** (full pipeline) or scale across **multiple Mac minis**. Start with a single node unless you need more throughput.
+
+There are three deployment patterns:
+
+| Pattern | When to use | Storage |
+|---------|-------------|---------|
+| **Single node** | Getting started; one machine | Local SSD or external volume |
+| **Independent fleet** | Multiple Mac minis in different locations | Each machine has its own disk — **no shared drive** |
+| **Role-split cluster** | Two+ Mac minis at the same site with a shared volume | Same `data_root` mount on every machine |
+
+Use **independent fleet** when nodes are in different buildings or cities. Use **role-split** only when all Mac minis can read the same files at the same path (e.g. one Thunderbolt enclosure or NAS mounted at `/Volumes/omics/watchtower` on each machine).
 
 ## Prerequisites
 
@@ -109,7 +119,58 @@ If `discover` logs a 429 warning, it will retry automatically. Re-run after a mi
 
 ## Multi-Node Deployment
 
-Split roles when you want discovery/downloads on one Mac and analysis/reports on another (or when a single machine runs out of disk or CPU).
+### Independent fleet (full pipeline per machine)
+
+**Recommended when Mac minis are in different physical locations** and cannot share a drive.
+
+Each machine runs the complete pipeline on its own SSD or external volume. Every node uses the same four `job_types` as the single-node setup (`discover`, `download`, `analyze`, `report`), but with a **unique** `node_id` and its own `data_root`:
+
+```yaml
+# config/nodes/oyster-mini-lab-a.yaml (repeat per site with a new node_id)
+node_id: oyster-mini-lab-a
+hostname: lab-a-mac.local
+data_root: /Volumes/omics/watchtower   # local to this Mac — not shared with other sites
+capabilities:
+  job_types:
+    - discover
+    - download
+    - analyze
+    - report
+  max_concurrent_jobs: 1
+  storage_gb_free_min: 200
+  preferred_species:
+    - crassostrea_gigas
+profiles:
+  - mac_arm64
+```
+
+On each Mac mini, repeat the one-time setup (clone, bootstrap, token, Salmon index), create a site-specific node config, commit it to git, then:
+
+```bash
+./deploy/macos/install_worker.sh --node-id oyster-mini-lab-a
+```
+
+**How coordination works**
+
+- GitHub Issues remain the authoritative queue. Workers on every site poll the same issue list and claim jobs via labels.
+- SQLite (`{data_root}/watchtower.db`) is a **per-node local cache** — each Mac has its own database file.
+- Download and analyze jobs pass **absolute filesystem paths** (samplesheet and FASTQ locations under that node's `data_root`). Raw data never moves between sites automatically.
+- A dataset's discover → download → analyze → report chain should complete on **one** machine. The worker that runs a download creates the analyze issue with paths on its own disk; the same node normally claims that follow-on job on the next poll.
+
+**Partitioning work across sites**
+
+To reduce the chance that site B claims an analyze job whose data lives on site A's disk:
+
+- Give each site a distinct `preferred_species` when you expand to multiple species (Phase 2), or
+- Run discovery from one place only (scheduled GitHub Action or a designated node) and let workers compete for download/analyze jobs, keeping `max_concurrent_jobs: 1` so the completing node tends to pick up the next step first.
+
+If an analyze job is claimed by the wrong node, it will fail (missing files). Use `watchtower retry <job_id>` after fixing routing, or run `watchtower worker housekeeping` to release stale claims.
+
+**Scaling goal:** more Mac minis processing **different** datasets in parallel, each with a self-contained copy of staged data and results — not splitting one dataset's pipeline across distant machines.
+
+### Role-split cluster (shared storage required)
+
+Use this only when **all Mac minis are colocated** and mount the **same** data volume at the same `data_root` path (shared Thunderbolt drive, NAS, etc.).
 
 | Node | Config | Suggested role |
 |------|--------|----------------|
@@ -125,6 +186,8 @@ Install one worker per machine:
 # On second Mac mini
 ./deploy/macos/install_worker.sh --node-id oyster-mini-02
 ```
+
+The download node writes FASTQ files and a samplesheet under the shared `data_root`. The analyze node reads those paths directly — this only works if both machines see the same files.
 
 Each node pulls config from git and claims jobs matching its `capabilities.job_types`. GitHub Issues remain the authoritative queue; SQLite on each node is a local cache.
 

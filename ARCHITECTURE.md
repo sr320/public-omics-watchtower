@@ -220,12 +220,14 @@ Issues with `status:running` and no update for 24 hours are reset to `status:que
 
 Node capabilities are defined in `config/nodes/{node_id}.yaml`. A **single Mac mini** can run the full pipeline by listing all job types in one config (see `config/nodes/_template.yaml` and [deploy/docs/node_setup.md](deploy/docs/node_setup.md)).
 
-For **multi-node** deployments, split roles across machines:
+For **multi-node** deployments, choose a layout based on storage:
 
-| Node | Suggested Role (Phase 1) |
-|------|--------------------------|
-| `oyster-mini-01` | discovery + download |
-| `oyster-mini-02` | analysis + report |
+| Layout | Storage | Node config |
+|--------|---------|-------------|
+| **Independent fleet** | Each Mac mini has its own `data_root` (different locations) | All four job types on every node; unique `node_id` per machine |
+| **Role-split cluster** | Shared volume at the same `data_root` path (colocated) | Split job types, e.g. `oyster-mini-01` = discovery + download, `oyster-mini-02` = analysis + report |
+
+Download jobs stage FASTQ files and write a samplesheet with **absolute paths** under the downloading node's `data_root`. Analyze jobs read those paths directly — there is no cross-node data transfer in Phase 1. Independent fleet nodes therefore process each dataset end-to-end on one machine; role-split only works when every node can read the same files.
 
 Roles are **soft preferences** via `capabilities.job_types` and `preferred_species`, not hard partitions.
 

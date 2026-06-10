@@ -24,12 +24,14 @@ Each step is a GitHub Issue with YAML frontmatter. Workers claim issues via labe
 
 **Single Mac mini:** one launchd-managed worker with a node config listing all job types (`discover`, `download`, `analyze`, `report`) processes the full pipeline. See [deploy/docs/node_setup.md](../deploy/docs/node_setup.md).
 
-**Multi-node:** split `job_types` across machines (e.g. discovery/download on one mini, analysis/report on another). Each node runs its own worker daemon.
+**Multi-node — independent fleet (recommended for separate locations):** each Mac mini runs the full pipeline on its own disk with a unique `node_id`. Workers share the GitHub Issues queue but do not share storage; download/analyze handoff uses local paths on the machine that staged the data.
 
-In both layouts:
+**Multi-node — role-split cluster (colocated only):** split `job_types` across machines (e.g. discovery/download on one mini, analysis/report on another) when all nodes mount the same `data_root` volume. Required because analyze jobs reference absolute paths written by the download node.
+
+In all layouts:
 
 - GitHub Issues are authoritative for job state
-- SQLite mirrors issue state locally per node
+- SQLite mirrors issue state locally per node (one `watchtower.db` per machine)
 - Stale claims reclaimed after 24h via housekeeping
 
 See the implementation plan for full diagrams and schema details.

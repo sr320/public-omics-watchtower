@@ -73,7 +73,22 @@ class DatasetRanker:
         for record in records:
             existing = store.get_dataset_by_accession(record.source, record.accession)
             if existing:
-                logger.debug("Skipping known accession %s", record.accession)
+                if existing.github_issue_number or existing.status in {
+                    "completed",
+                    "ready",
+                    "failed",
+                    "skipped",
+                }:
+                    logger.debug("Skipping known accession %s", record.accession)
+                    continue
+                score = int(existing.relevance_score or 0)
+                if self.should_queue(score):
+                    jobs.append(self.create_download_job(existing, score))
+                    logger.info(
+                        "Re-queued %s with score %d (missing GitHub issue)",
+                        record.accession,
+                        score,
+                    )
                 continue
 
             score, breakdown = self.score(record)

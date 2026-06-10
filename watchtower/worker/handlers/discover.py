@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from watchtower.config.loader import load_watchtower_config
 from watchtower.db.models import Job, JobEvent
@@ -25,6 +26,18 @@ def handle_discover(
 ) -> None:
     """Run discovery across enabled repositories and species."""
     wt_config = load_watchtower_config()
+    store.upsert_job(
+        Job(
+            job_id=job.job_id,
+            job_type=job.job_type,
+            dataset_id=job.dataset_id,
+            status="running",
+            github_issue_number=str(job.github_issue_number) if job.github_issue_number else None,
+            payload_json=json.dumps(job.payload),
+            started_at=datetime.now(timezone.utc).isoformat(),
+        )
+    )
+
     species_list = job.payload.get("species", wt_config.get("enabled_species", []))
     if isinstance(species_list, str):
         species_list = [species_list]
@@ -77,6 +90,17 @@ def handle_discover(
             job_id=job.job_id,
             event_type="discover_complete",
             message=f"Discovered {total_records} records, queued {len(all_jobs)} downloads",
+        )
+    )
+    store.upsert_job(
+        Job(
+            job_id=job.job_id,
+            job_type=job.job_type,
+            dataset_id=job.dataset_id,
+            status="succeeded",
+            github_issue_number=str(job.github_issue_number) if job.github_issue_number else None,
+            payload_json=json.dumps(job.payload),
+            finished_at=datetime.now(timezone.utc).isoformat(),
         )
     )
     logger.info(

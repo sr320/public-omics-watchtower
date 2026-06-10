@@ -62,3 +62,37 @@ def test_ranker_creates_download_job() -> None:
         jobs = ranker.process_records([record], store)
         assert len(jobs) >= 1
         assert jobs[0].job_type == "download"
+
+
+def test_ranker_requeues_dataset_without_github_issue() -> None:
+    ranker = DatasetRanker("crassostrea_gigas")
+    import tempfile
+    from pathlib import Path
+
+    from watchtower.db.connection import connect
+    from watchtower.db.models import Dataset
+    from watchtower.db.store import Store
+
+    with tempfile.TemporaryDirectory() as tmp:
+        store = Store(connect(Path(tmp) / "t.db"))
+        store.upsert_dataset(
+            Dataset(
+                dataset_id="geo:GSE123",
+                source="geo",
+                accession="GSE123",
+                title="Existing queued dataset",
+                taxonomy_id=29159,
+                relevance_score=62.0,
+                status="queued",
+            )
+        )
+        record = DiscoveredRecord(
+            source="geo",
+            accession="GSE123",
+            title="Existing queued dataset",
+            organism="Crassostrea gigas",
+            taxonomy_id=29159,
+        )
+        jobs = ranker.process_records([record], store)
+        assert len(jobs) == 1
+        assert jobs[0].job_id == "GSE123:download:rnaseq_v1"

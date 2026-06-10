@@ -19,6 +19,21 @@ def test_queue_job_frontmatter() -> None:
     assert fm["payload"]["accession"] == "SRR1"
 
 
+def test_discover_job_frontmatter_omits_dataset_id() -> None:
+    from watchtower.config.validator import validate_issue_body
+
+    job = QueueJob(
+        job_id="discover:crassostrea_gigas:manual",
+        job_type="discover",
+        species="crassostrea_gigas",
+        payload={"species": ["crassostrea_gigas"]},
+        created_by="cli@watchtower",
+    )
+    fm = job.to_frontmatter()
+    assert "dataset_id" not in fm
+    validate_issue_body(fm)
+
+
 def test_queue_job_from_frontmatter() -> None:
     data = yaml.safe_load(open("tests/fixtures/mock_issue_body.yaml"))
     job = QueueJob.from_frontmatter(

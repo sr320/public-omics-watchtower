@@ -22,16 +22,18 @@ class QueueJob:
     claimed_by: str | None = None
 
     def to_frontmatter(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "job_id": self.job_id,
             "job_type": self.job_type,
-            "dataset_id": self.dataset_id,
             "species": self.species,
             "priority": self.priority,
             "payload": self.payload,
             "created_by": self.created_by,
             "schema_version": self.schema_version,
         }
+        if self.dataset_id is not None:
+            data["dataset_id"] = self.dataset_id
+        return data
 
     @classmethod
     def from_frontmatter(

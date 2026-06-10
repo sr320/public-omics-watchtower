@@ -1,7 +1,7 @@
 <table>
   <tr>
     <td width="35%">
-      <img src="img/pow.png" width="250" alt="Public Omics Watchtower logo">
+      <img src="img/pow.png" width="300" alt="Public Omics Watchtower logo">
     </td>
     <td>
       <h1>Autonomous public omics discovery platform for marine genomics and aquaculture research.</h1>

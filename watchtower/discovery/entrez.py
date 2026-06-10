@@ -119,6 +119,28 @@ class EntrezClient:
                     records.append(item)
         return records
 
+    def elink(self, dbfrom: str, db: str, ids: list[str]) -> list[str]:
+        if not ids:
+            return []
+        import json
+
+        text = self._get(
+            "elink.fcgi",
+            {
+                "dbfrom": dbfrom,
+                "db": db,
+                "id": ",".join(ids),
+                "retmode": "json",
+            },
+        )
+        data = json.loads(text)
+        linked: list[str] = []
+        for linkset in data.get("linksets", []):
+            for linksetdb in linkset.get("linksetdbs", []):
+                if linksetdb.get("dbto") == db:
+                    linked.extend(str(link_id) for link_id in linksetdb.get("links", []))
+        return linked
+
     def efetch_xml(self, db: str, ids: list[str]) -> ET.Element:
         text = self._get(
             "efetch.fcgi",

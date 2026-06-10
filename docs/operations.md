@@ -1,5 +1,7 @@
 # Operations Guide
 
+For initial Mac mini setup (single machine or fleet), see [deploy/docs/node_setup.md](../deploy/docs/node_setup.md).
+
 ## Daily Operations
 
 ```bash

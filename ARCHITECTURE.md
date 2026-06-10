@@ -216,9 +216,11 @@ START → load config → validate schema → register node heartbeat
 
 Issues with `status:running` and no update for 24 hours are reset to `status:queued` by housekeeping (`watchtower worker housekeeping` or the weekly GitHub Action).
 
-### Multi-Node Routing
+### Node Routing
 
-Node capabilities are defined in `config/nodes/{node_id}.yaml`:
+Node capabilities are defined in `config/nodes/{node_id}.yaml`. A **single Mac mini** can run the full pipeline by listing all job types in one config (see `config/nodes/_template.yaml` and [deploy/docs/node_setup.md](deploy/docs/node_setup.md)).
+
+For **multi-node** deployments, split roles across machines:
 
 | Node | Suggested Role (Phase 1) |
 |------|--------------------------|

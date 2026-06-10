@@ -35,6 +35,8 @@ watchtower worker run --node-id oyster-mini-01 --once
 | Document | Description |
 |----------|-------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System design, data flow, security, and component details |
+| [deploy/docs/node_setup.md](deploy/docs/node_setup.md) | Mac mini setup (single machine or multi-node) |
+| [docs/operations.md](docs/operations.md) | Daily operations and troubleshooting |
 | [ROADMAP.md](ROADMAP.md) | Phase 1–3 delivery plan and timeline |
 | [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md) | Directory layout and file reference |
 | [MILESTONES.md](MILESTONES.md) | Development milestones and success criteria |
@@ -64,12 +66,16 @@ docs/            Architecture and operations guides
 
 ## Mac Mini Deployment
 
-See [deploy/docs/node_setup.md](deploy/docs/node_setup.md).
+See [deploy/docs/node_setup.md](deploy/docs/node_setup.md) for the full guide.
+
+**Single Mac mini (recommended to start):** one worker runs the entire pipeline (discover → download → analyze → report). Create a node config with all four `job_types` (see `config/nodes/_template.yaml`), then:
 
 ```bash
 ./deploy/macos/bootstrap.sh
-./deploy/macos/install_worker.sh --node-id oyster-mini-01
+./deploy/macos/install_worker.sh --node-id oyster-mini-solo
 ```
+
+**Multi-node:** split roles across machines (e.g. `oyster-mini-01` for discovery/download, `oyster-mini-02` for analysis/report).
 
 ## CLI Reference
 

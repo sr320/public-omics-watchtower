@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 
 ENTREZ_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 ESUMMARY_BATCH_SIZE = 200
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 _entrez_rate_limiter: RateLimiter | None = None
 
@@ -65,11 +66,12 @@ class EntrezClient:
         for attempt in range(max_retries):
             self.rate_limiter.wait()
             response = self.session.post(url, data=full_params, timeout=60)
-            if response.status_code == 429:
+            if response.status_code in RETRYABLE_STATUS_CODES:
                 retry_after = response.headers.get("Retry-After")
                 wait = float(retry_after) if retry_after else delay
                 logger.warning(
-                    "Entrez rate limited (429) on %s, retrying in %.1fs (attempt %d/%d)",
+                    "Entrez request failed (%s) on %s, retrying in %.1fs (attempt %d/%d)",
+                    response.status_code,
                     endpoint,
                     wait,
                     attempt + 1,

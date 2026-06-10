@@ -87,6 +87,29 @@ def test_entrez_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None:
     assert mock_post.call_count == 2
 
 
+def test_entrez_retries_on_502(monkeypatch: pytest.MonkeyPatch) -> None:
+    import watchtower.discovery.entrez as entrez_mod
+
+    monkeypatch.setattr(entrez_mod, "_entrez_rate_limiter", None)
+    client = EntrezClient(rate_limit_per_sec=1000)
+    ok = requests.Response()
+    ok.status_code = 200
+    ok._content = b'{"esearchresult": {"idlist": []}}'
+
+    bad_gateway = requests.Response()
+    bad_gateway.status_code = 502
+    bad_gateway.headers = {}
+    bad_gateway.reason = "Bad Gateway"
+
+    mock_post = MagicMock(side_effect=[bad_gateway, ok])
+    client.session.post = mock_post
+    monkeypatch.setattr("watchtower.discovery.entrez.time.sleep", lambda _: None)
+
+    result = client.esearch("gds", "test")
+    assert result == []
+    assert mock_post.call_count == 2
+
+
 def test_entrez_clients_share_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
     import watchtower.discovery.entrez as entrez_mod
 

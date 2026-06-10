@@ -1,12 +1,12 @@
 """Discovery module tests."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import requests
 
 from watchtower.discovery.base import DiscoveredRecord, RateLimiter
-from watchtower.discovery.entrez import EntrezClient, _entrez_rate_limiter
+from watchtower.discovery.entrez import EntrezClient
 from watchtower.discovery.geo import GEODiscovery
 from watchtower.discovery.sra import SRADiscovery
 

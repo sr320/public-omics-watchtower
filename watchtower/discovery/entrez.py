@@ -6,6 +6,7 @@ import os
 import time
 import xml.etree.ElementTree as ET
 from typing import Any
+
 import requests
 
 from watchtower.discovery.base import RateLimiter

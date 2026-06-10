@@ -1,8 +1,8 @@
 # public-omics-watchtower
-
 Autonomous public omics discovery platform for marine genomics and aquaculture research.
 
-Continuously monitors NCBI SRA and GEO, prioritizes datasets relevant to marine stress biology, downloads selected studies, and runs reproducible Salmon + DESeq2 workflows on Apple Silicon Mac minis—with GitHub Issues as the distributed work queue.
+<img src="img/pow.png" width="300">
+Continuously monitors NCBI SRA and GEO, prioritizes datasets relevant to marine stress biology, downloads selected studies, and runs reproducible Salmon + DESeq2 workflows on Apple Silicon Mac minis—with GitHub Issues as the distributed work queue. <a href="https://robertslab.github.io/resources/Agentic-Coding-Tools/#five-level-rubric"><img alt="AI Use Level 4: Substantial AI contribution" src="https://img.shields.io/badge/AI%20Use-Level%204%20Substantial%20AI%20Contribution-red"></a>
 
 ## Phase 1 Scope
 

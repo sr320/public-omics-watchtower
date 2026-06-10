@@ -38,6 +38,18 @@ watchtower github store-token
 
 Each node pulls config from git and claims jobs matching its `capabilities.job_types`.
 
+## NCBI API Key (recommended)
+
+Discovery queries NCBI Entrez (SRA + GEO). Without an API key, NCBI allows about 3 requests per second per IP; the smoke-test `discover` command makes several calls in quick succession and may hit a temporary 429 if other tools are using the same IP.
+
+Create a key at [NCBI account settings](https://www.ncbi.nlm.nih.gov/account/settings/), then add to your shell profile:
+
+```bash
+export NCBI_API_KEY="your_key_here"
+```
+
+With a key, you can raise `discovery.entrez_rate_limit_per_sec` to `10` in `config/watchtower.yaml`.
+
 ## Smoke Test
 
 ```bash
@@ -46,6 +58,8 @@ watchtower discover --species crassostrea_gigas
 watchtower status
 watchtower worker run --node-id oyster-mini-01 --once
 ```
+
+If `discover` logs a 429 warning, it will retry automatically. Re-run after a minute if retries are exhausted.
 
 ## Maintenance
 

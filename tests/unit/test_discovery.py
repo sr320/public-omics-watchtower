@@ -1,6 +1,12 @@
 """Discovery module tests."""
 
+from unittest.mock import MagicMock, patch
+
+import pytest
+import requests
+
 from watchtower.discovery.base import DiscoveredRecord, RateLimiter
+from watchtower.discovery.entrez import EntrezClient, _entrez_rate_limiter
 from watchtower.discovery.geo import GEODiscovery
 from watchtower.discovery.sra import SRADiscovery
 
@@ -56,3 +62,35 @@ def test_discovered_record_id() -> None:
         source="geo", accession="GSE1", title="t", organism="o", taxonomy_id=1
     )
     assert r.dataset_id == "geo:GSE1"
+
+
+def test_entrez_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None:
+    import watchtower.discovery.entrez as entrez_mod
+
+    monkeypatch.setattr(entrez_mod, "_entrez_rate_limiter", None)
+    client = EntrezClient(rate_limit_per_sec=1000)
+    ok = requests.Response()
+    ok.status_code = 200
+    ok._content = b'{"esearchresult": {"idlist": []}}'
+
+    rate_limited = requests.Response()
+    rate_limited.status_code = 429
+    rate_limited.headers = {"Retry-After": "0"}
+    rate_limited.reason = "Too Many Requests"
+
+    mock_post = MagicMock(side_effect=[rate_limited, ok])
+    client.session.post = mock_post
+    monkeypatch.setattr("watchtower.discovery.entrez.time.sleep", lambda _: None)
+
+    result = client.esearch("gds", "test")
+    assert result == []
+    assert mock_post.call_count == 2
+
+
+def test_entrez_clients_share_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
+    import watchtower.discovery.entrez as entrez_mod
+
+    monkeypatch.setattr(entrez_mod, "_entrez_rate_limiter", None)
+    first = EntrezClient(rate_limit_per_sec=3.0)
+    second = EntrezClient(rate_limit_per_sec=3.0)
+    assert first.rate_limiter is second.rate_limiter

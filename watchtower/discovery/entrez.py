@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 import xml.etree.ElementTree as ET
 from typing import Any
 import requests
@@ -13,6 +14,17 @@ from watchtower.utils.logging import get_logger
 logger = get_logger(__name__)
 
 ENTREZ_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+ESUMMARY_BATCH_SIZE = 200
+
+_entrez_rate_limiter: RateLimiter | None = None
+
+
+def get_entrez_rate_limiter(requests_per_sec: float = 3.0) -> RateLimiter:
+    """Return a process-wide Entrez rate limiter shared by all clients."""
+    global _entrez_rate_limiter
+    if _entrez_rate_limiter is None:
+        _entrez_rate_limiter = RateLimiter(requests_per_sec)
+    return _entrez_rate_limiter
 
 
 class EntrezClient:
@@ -23,11 +35,21 @@ class EntrezClient:
         email: str = "watchtower@example.com",
         api_key: str | None = None,
         rate_limit_per_sec: float = 3.0,
+        rate_limiter: RateLimiter | None = None,
     ) -> None:
         self.email = email
         self.api_key = api_key or os.environ.get("NCBI_API_KEY")
-        self.rate_limiter = RateLimiter(rate_limit_per_sec)
+        self.rate_limiter = rate_limiter or get_entrez_rate_limiter(rate_limit_per_sec)
         self.session = requests.Session()
+
+    @classmethod
+    def from_config(cls) -> EntrezClient:
+        """Build a client using watchtower discovery settings."""
+        from watchtower.config.loader import load_watchtower_config
+
+        config = load_watchtower_config()
+        rate = float(config.get("discovery", {}).get("entrez_rate_limit_per_sec", 3.0))
+        return cls(rate_limit_per_sec=rate)
 
     def _base_params(self) -> dict[str, str]:
         params = {"email": self.email, "tool": "public-omics-watchtower"}
@@ -35,13 +57,32 @@ class EntrezClient:
             params["api_key"] = self.api_key
         return params
 
-    def _get(self, endpoint: str, params: dict[str, Any]) -> str:
-        self.rate_limiter.wait()
+    def _get(self, endpoint: str, params: dict[str, Any], max_retries: int = 5) -> str:
         full_params = {**self._base_params(), **params}
         url = f"{ENTREZ_BASE}/{endpoint}"
-        response = self.session.post(url, data=full_params, timeout=60)
-        response.raise_for_status()
-        return response.text
+        delay = 1.0
+        response: requests.Response | None = None
+        for attempt in range(max_retries):
+            self.rate_limiter.wait()
+            response = self.session.post(url, data=full_params, timeout=60)
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After")
+                wait = float(retry_after) if retry_after else delay
+                logger.warning(
+                    "Entrez rate limited (429) on %s, retrying in %.1fs (attempt %d/%d)",
+                    endpoint,
+                    wait,
+                    attempt + 1,
+                    max_retries,
+                )
+                time.sleep(wait)
+                delay = min(delay * 2, 60)
+                continue
+            response.raise_for_status()
+            return response.text
+        if response is not None:
+            response.raise_for_status()
+        raise RuntimeError(f"Entrez request to {endpoint} failed without a response")
 
     def esearch(self, db: str, term: str, retmax: int = 100) -> list[str]:
         text = self._get(
@@ -56,22 +97,24 @@ class EntrezClient:
     def esummary(self, db: str, ids: list[str]) -> list[dict[str, Any]]:
         if not ids:
             return []
-        text = self._get(
-            "esummary.fcgi",
-            {"db": db, "id": ",".join(ids), "retmode": "json"},
-        )
         import json
 
-        data = json.loads(text)
-        result = data.get("result", {})
-        records = []
-        for uid in result.get("uids", []):
-            if uid == "uids":
-                continue
-            item = result.get(uid, {})
-            if isinstance(item, dict):
-                item["uid"] = uid
-                records.append(item)
+        records: list[dict[str, Any]] = []
+        for start in range(0, len(ids), ESUMMARY_BATCH_SIZE):
+            batch = ids[start : start + ESUMMARY_BATCH_SIZE]
+            text = self._get(
+                "esummary.fcgi",
+                {"db": db, "id": ",".join(batch), "retmode": "json"},
+            )
+            data = json.loads(text)
+            result = data.get("result", {})
+            for uid in result.get("uids", []):
+                if uid == "uids":
+                    continue
+                item = result.get(uid, {})
+                if isinstance(item, dict):
+                    item["uid"] = uid
+                    records.append(item)
         return records
 
     def efetch_xml(self, db: str, ids: list[str]) -> ET.Element:

@@ -7,6 +7,7 @@ import json
 from watchtower.config.loader import load_watchtower_config
 from watchtower.db.models import Job, JobEvent
 from watchtower.db.store import Store
+from watchtower.discovery.entrez import EntrezClient
 from watchtower.discovery.geo import GEODiscovery
 from watchtower.discovery.sra import SRADiscovery
 from watchtower.queue.github_issues import GitHubIssuesQueue
@@ -41,10 +42,11 @@ def handle_discover(
         retmax = int(wt_config.get("discovery", {}).get("max_results_per_query", 100))
 
         records = []
+        entrez = EntrezClient.from_config()
         for source_cls in (SRADiscovery, GEODiscovery):
-            if not source_cls().config.get("enabled", True):
+            source = source_cls(entrez=entrez)
+            if not source.config.get("enabled", True):
                 continue
-            source = source_cls()
             found = source.search(organism, taxonomy_id, retmax=retmax)
             records.extend(found)
             total_records += len(found)

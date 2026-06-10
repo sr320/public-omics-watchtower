@@ -14,6 +14,7 @@ from watchtower.db.store import Store
 from watchtower.queue.github_issues import GitHubIssuesQueue
 from watchtower.queue.models import QueueJob
 from watchtower.reporting.weekly import generate_weekly_digest, publish_weekly_issue
+from watchtower.utils.github_auth import resolve_github_token
 from watchtower.utils.logging import setup_logging
 from watchtower.utils.paths import find_repo_root
 from watchtower.worker.daemon import run_worker
@@ -99,7 +100,7 @@ def discover_cmd(species: str, create_issue: bool) -> None:
         created_by="cli@watchtower",
     )
 
-    if create_issue and os.environ.get("GITHUB_TOKEN"):
+    if create_issue and resolve_github_token():
         issue_num = queue.create_job(job, context_md=f"Manual discovery for {species}")
         job.github_issue_number = issue_num
 
@@ -185,7 +186,7 @@ def report_cmd(weekly: bool, data_root: Path | None, publish_issue: bool) -> Non
     if weekly:
         path = generate_weekly_digest(store, dr / "reports")
         click.echo(f"Weekly digest: {path}")
-        if publish_issue and os.environ.get("GITHUB_TOKEN"):
+        if publish_issue and resolve_github_token():
             queue = GitHubIssuesQueue(
                 owner=wt["github"]["owner"],
                 repo=wt["github"]["repo"],
@@ -220,10 +221,10 @@ def get_token(service: str) -> None:
 
     token = keyring.get_password(service, "GITHUB_TOKEN")
     if token:
-        click.echo("Token found in keychain. Export with:")
-        click.echo(f'  export GITHUB_TOKEN="$(security find-generic-password -s {service} -w)"')
+        click.echo(f"Token found in keychain service '{service}'.")
+        click.echo("Watchtower loads it automatically; no export required.")
     else:
-        click.echo("No token found.")
+        click.echo("No token found. Run: watchtower github store-token")
 
 
 if __name__ == "__main__":

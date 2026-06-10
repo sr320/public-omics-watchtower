@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -13,6 +12,7 @@ import yaml
 
 from watchtower.config.validator import parse_issue_frontmatter, validate_issue_body
 from watchtower.queue.models import QueueJob, job_type_label, priority_label, status_label
+from watchtower.utils.github_auth import resolve_github_token
 from watchtower.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +36,7 @@ class GitHubIssuesQueue:
     ) -> None:
         self.owner = owner
         self.repo = repo
-        self.token = token or os.environ.get("GITHUB_TOKEN", "")
+        self.token = token or resolve_github_token()
         self.priority_thresholds = priority_thresholds or {
             "high": 75,
             "normal": 50,
@@ -96,6 +96,11 @@ class GitHubIssuesQueue:
         return labels
 
     def create_job(self, job: QueueJob, context_md: str = "") -> int:
+        if not self.token:
+            raise GitHubQueueError(
+                "GitHub token not configured. Run `watchtower github store-token` "
+                "or export GITHUB_TOKEN."
+            )
         validate_issue_body(job.to_frontmatter())
         payload = {
             "title": f"[{job.job_type}] {job.job_id}",

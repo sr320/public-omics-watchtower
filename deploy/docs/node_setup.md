@@ -20,8 +20,9 @@ cd /opt/watchtower/app
 chmod +x deploy/macos/*.sh
 ./deploy/macos/bootstrap.sh
 
-# Store GitHub token in Keychain
+# Store GitHub token in Keychain (Issues + Contents scope on this repo)
 watchtower github store-token
+watchtower github get-token   # should report "Token found"
 
 # Build Salmon index (see references/crassostrea_gigas/README.md)
 

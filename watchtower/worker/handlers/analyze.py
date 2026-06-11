@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import uuid
 from datetime import datetime, timezone
@@ -90,10 +91,30 @@ def handle_analyze(
         "-with-trace", str(run_dir / "trace.txt"),
     ]
 
-    logger.info("Running Nextflow: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd, capture_output=True, text=True, check=False, cwd=str(find_repo_root())
+    # Hard ceiling so a wedged Nextflow run cannot hold the worker slot forever.
+    nf_timeout = int(
+        os.environ.get(
+            "WATCHTOWER_NEXTFLOW_TIMEOUT",
+            pipeline_cfg.get("nextflow", {}).get("timeout_sec", 24 * 3600),
+        )
     )
+    logger.info("Running Nextflow (timeout %ds): %s", nf_timeout, " ".join(cmd))
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=str(find_repo_root()),
+            timeout=nf_timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        run.status = "failed"
+        run.finished_at = datetime.now(timezone.utc).isoformat()
+        store.upsert_pipeline_run(run)
+        raise RuntimeError(
+            f"Nextflow run {run_id} timed out after {nf_timeout}s; aborted."
+        ) from exc
 
     if result.returncode != 0:
         run.status = "failed"

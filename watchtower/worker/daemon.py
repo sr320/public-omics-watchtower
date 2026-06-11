@@ -54,8 +54,32 @@ class WorkerDaemon:
 
         validate_watchtower_config()
         self.node.register()
+        self._reconcile_orphaned_jobs()
         self._sync_queue()
         logger.info("Worker %s started", self.node_id)
+
+    def _reconcile_orphaned_jobs(self) -> None:
+        """Clear jobs left 'running' by a previous crash.
+
+        A worker killed mid-job leaves its job row stuck in 'running', which
+        permanently consumes node capacity and silently wedges the worker so it
+        never picks up new work. On startup, mark any such jobs failed so the
+        slot is freed; GitHub claims are released separately by housekeeping.
+        """
+        orphans = [
+            job
+            for job in self.store.list_jobs(status="running", limit=1000)
+            if job.claimed_by_node == self.node_id
+        ]
+        for job in orphans:
+            job.status = "failed"
+            job.error_message = "Interrupted: worker restarted while job was running"
+            job.finished_at = datetime.now(timezone.utc).isoformat()
+            self.store.upsert_job(job)
+        if orphans:
+            logger.warning(
+                "Reset %d orphaned running job(s) from a previous run", len(orphans)
+            )
 
     def _sync_queue(self) -> None:
         count = self.queue.sync_jobs_to_store(self.store)
@@ -76,15 +100,16 @@ class WorkerDaemon:
                 return job
         return None
 
-    def _process_job(self, job: QueueJob) -> None:
+    def _process_job(self, job: QueueJob) -> bool:
+        """Claim and run a job. Returns True only if the job was actually run."""
         issue_num = job.github_issue_number
         if issue_num is None:
             logger.warning("Job %s has no issue number", job.job_id)
-            return
+            return False
 
         if not self.queue.claim_job(issue_num, self.node_id, job.job_id):
             logger.debug("Failed to claim issue #%s", issue_num)
-            return
+            return False
 
         self.store.upsert_job(
             Job(
@@ -165,6 +190,7 @@ class WorkerDaemon:
                     finished_at=datetime.now(timezone.utc).isoformat(),
                 )
             )
+        return True
 
     def run_once(self) -> bool:
         """Process at most one job. Returns True if a job was processed."""
@@ -181,8 +207,7 @@ class WorkerDaemon:
         if not self.node.can_handle(job.job_type, job.species):
             return False
 
-        self._process_job(job)
-        return True
+        return self._process_job(job)
 
     def run_loop(self, max_iterations: int | None = None) -> None:
         """Poll until interrupted or max_iterations reached."""

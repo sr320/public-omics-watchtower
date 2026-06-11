@@ -23,8 +23,21 @@
 
 ## Quick Start
 
+> **Python 3.11 is required.** The bioinformatics dependencies (Salmon, sra-tools,
+> Nextflow, R/DESeq2) come from the conda environment, and the orchestration code
+> relies on 3.9+ language features. Running under an older interpreter (e.g. a base
+> Anaconda 3.8 environment) is the most common cause of import errors and silently
+> broken commands. Always work inside the `watchtower` conda env.
+
 ```bash
-# Install
+# Create and activate the environment (installs Python 3.11 + all bio tools)
+conda env create -f environment.yml
+conda activate watchtower
+
+# Confirm you are on 3.11 before doing anything else
+python --version   # should print Python 3.11.x
+
+# If the editable install did not run during env creation, install it now
 pip install -e ".[dev]"
 
 # Validate configuration
@@ -39,6 +52,20 @@ watchtower status
 # Run worker (one job)
 watchtower worker run --node-id oyster-mini-01 --once
 ```
+
+### Long-running jobs and timeouts
+
+Downloads (`prefetch`/`fasterq-dump`) and analysis (`nextflow`) run external tools
+that can hang on flaky networks or stuck pipelines. Watchtower caps each one with a
+wall-clock timeout so a single hang can never freeze a worker. Override the defaults
+when a dataset is unusually large:
+
+| Variable | Default | Applies to |
+|----------|---------|-----------|
+| `WATCHTOWER_PREFETCH_TIMEOUT` | 21600 (6 h) | SRA `prefetch` |
+| `WATCHTOWER_FASTERQ_TIMEOUT` | 21600 (6 h) | `fasterq-dump` |
+| `WATCHTOWER_NEXTFLOW_TIMEOUT` | 86400 (24 h) | Nextflow analysis run |
+| `WATCHTOWER_REPORT_SYNC_TIMEOUT` | 600 (10 m) | Reports-branch push |
 
 ## Documentation
 
@@ -88,6 +115,8 @@ See [deploy/docs/node_setup.md](deploy/docs/node_setup.md) for the full guide.
 **Multi-node — independent fleet:** add more Mac minis in different locations, each with all four `job_types` and its own disk (no shared drive). See [deploy/docs/node_setup.md](deploy/docs/node_setup.md#independent-fleet-full-pipeline-per-machine).
 
 **Multi-node — role-split cluster:** colocated Mac minis only, sharing one `data_root` volume — e.g. `oyster-mini-01` for discovery/download, `oyster-mini-02` for analysis/report.
+
+**Uninstall:** to completely remove watchtower from a Mac mini, run `./deploy/macos/uninstall.sh` (add `--dry-run` to preview, `--purge-data` to also delete downloaded data). See [deploy/docs/node_setup.md](deploy/docs/node_setup.md#uninstall).
 
 ## CLI Reference
 

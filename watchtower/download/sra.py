@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -12,6 +13,11 @@ from watchtower.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Wall-clock ceilings so a hung external tool can never freeze the worker forever.
+# Override via environment for unusually large datasets.
+PREFETCH_TIMEOUT_SEC = int(os.environ.get("WATCHTOWER_PREFETCH_TIMEOUT", 6 * 3600))
+FASTERQ_TIMEOUT_SEC = int(os.environ.get("WATCHTOWER_FASTERQ_TIMEOUT", 6 * 3600))
+
 
 class DownloadError(Exception):
     """Download operation failed."""
@@ -21,7 +27,21 @@ def _which(cmd: str) -> str | None:
     return shutil.which(cmd)
 
 
-def prefetch(accession: str, output_dir: Path) -> Path:
+def _run(cmd: list[str], *, timeout: int, what: str) -> subprocess.CompletedProcess[str]:
+    """Run a subprocess with a timeout, converting hangs into DownloadError."""
+    logger.info("Running (timeout %ds): %s", timeout, " ".join(cmd))
+    try:
+        return subprocess.run(
+            cmd, capture_output=True, text=True, check=False, timeout=timeout
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise DownloadError(
+            f"{what} timed out after {timeout}s. Increase the relevant "
+            f"WATCHTOWER_*_TIMEOUT env var if this dataset is unusually large."
+        ) from exc
+
+
+def prefetch(accession: str, output_dir: Path, timeout: int = PREFETCH_TIMEOUT_SEC) -> Path:
     """Run prefetch for SRA accession."""
     prefetch_bin = _which("prefetch")
     if not prefetch_bin:
@@ -29,8 +49,7 @@ def prefetch(accession: str, output_dir: Path) -> Path:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [prefetch_bin, accession, "-O", str(output_dir)]
-    logger.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    result = _run(cmd, timeout=timeout, what="prefetch")
     if result.returncode != 0:
         raise DownloadError(f"prefetch failed: {result.stderr}")
 
@@ -40,7 +59,12 @@ def prefetch(accession: str, output_dir: Path) -> Path:
     return sra_files[0]
 
 
-def fasterq_dump(sra_path: Path, output_dir: Path, threads: int = 4) -> list[Path]:
+def fasterq_dump(
+    sra_path: Path,
+    output_dir: Path,
+    threads: int = 4,
+    timeout: int = FASTERQ_TIMEOUT_SEC,
+) -> list[Path]:
     """Convert SRA to FASTQ."""
     fasterq = _which("fasterq-dump")
     if not fasterq:
@@ -54,8 +78,7 @@ def fasterq_dump(sra_path: Path, output_dir: Path, threads: int = 4) -> list[Pat
         "-e", str(threads),
         "--split-files",
     ]
-    logger.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    result = _run(cmd, timeout=timeout, what="fasterq-dump")
     if result.returncode != 0:
         raise DownloadError(f"fasterq-dump failed: {result.stderr}")
 

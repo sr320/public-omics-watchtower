@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from watchtower.config.loader import load_watchtower_config
@@ -72,8 +74,6 @@ def _maybe_push_reports(
     owner = github_cfg.get("owner", "")
     repo = github_cfg.get("repo", "")
 
-    import os
-
     if not os.environ.get("GITHUB_TOKEN"):
         logger.debug("Skipping reports branch push: no GITHUB_TOKEN")
         return
@@ -89,15 +89,19 @@ def _maybe_push_reports(
 
     sync_script = repo_root / "watchtower" / "reporting" / "sync_reports.py"
     if sync_script.exists():
-        subprocess.run(
-            [
-                "python", str(sync_script),
-                "--owner", owner,
-                "--repo", repo,
-                "--branch", reports_branch,
-                "--source", str(target),
-                "--prefix", f"studies/{run_id}",
-            ],
-            check=False,
-            capture_output=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    sys.executable, str(sync_script),
+                    "--owner", owner,
+                    "--repo", repo,
+                    "--branch", reports_branch,
+                    "--source", str(target),
+                    "--prefix", f"studies/{run_id}",
+                ],
+                check=False,
+                capture_output=True,
+                timeout=int(os.environ.get("WATCHTOWER_REPORT_SYNC_TIMEOUT", 600)),
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning("Reports branch push timed out; skipping for run %s", run_id)

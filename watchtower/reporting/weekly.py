@@ -20,8 +20,10 @@ def week_bounds(reference: datetime | None = None) -> tuple[str, str, str]:
     """Return (report_id, week_start, week_end) for ISO week."""
     ref = reference or datetime.now(timezone.utc)
     week_start = ref - timedelta(days=7)
+    # isocalendar() returns a plain tuple on Python 3.8 and a named tuple on
+    # 3.9+; index access works on both.
     iso = ref.isocalendar()
-    report_id = f"{iso.year}-W{iso.week:02d}"
+    report_id = f"{iso[0]}-W{iso[1]:02d}"
     return (
         report_id,
         week_start.strftime("%Y-%m-%d"),

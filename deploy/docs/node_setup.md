@@ -211,3 +211,63 @@ For launchd workers, add `NCBI_API_KEY` to the `EnvironmentVariables` dict in `~
 - Reclaim stale jobs: `watchtower worker housekeeping --node-id <node-id>`
 - Check logs: `tail -f /Volumes/omics/watchtower/logs/worker.log`
 - Worker status: `launchctl list | grep watchtower`
+
+## Uninstall
+
+To completely remove watchtower from a Mac mini, use the uninstall script. It reverses everything `bootstrap.sh` and `install_worker.sh` set up: the launchd worker service, the conda `watchtower` environment, the editable pip package, the Nextflow binary, and the app directory.
+
+```bash
+cd /opt/watchtower/app
+
+# Preview what would be removed (changes nothing)
+./deploy/macos/uninstall.sh --dry-run
+
+# Interactive uninstall — keeps the data root
+./deploy/macos/uninstall.sh
+
+# Non-interactive uninstall — keeps the data root
+./deploy/macos/uninstall.sh --yes
+
+# Also delete the data root (raw downloads, runs, reports, logs, DBs)
+./deploy/macos/uninstall.sh --purge-data
+```
+
+**Data is preserved by default.** The data root (`/Volumes/omics/watchtower`) is only deleted when you pass `--purge-data`, and even then the script asks for confirmation unless combined with `--yes`.
+
+The defaults can be overridden with environment variables if you installed to non-standard locations:
+
+```bash
+APP_DIR=/opt/watchtower/app \
+DATA_ROOT=/Volumes/omics/watchtower \
+ENV_NAME=watchtower \
+./deploy/macos/uninstall.sh
+```
+
+### What the script does not remove
+
+These are shared tools the script leaves in place — remove them manually only if nothing else on the machine depends on them:
+
+- **Homebrew** and the `git` / `jq` formulae installed by `bootstrap.sh` (`brew uninstall jq`)
+- **mambaforge** itself (`rm -rf "$HOME/mambaforge"`) — only the `watchtower` conda environment is removed, not the conda installation
+- The `NCBI_API_KEY` export you may have added to your shell profile
+
+### Manual uninstall (if you prefer to do it by hand)
+
+```bash
+# 1. Stop and remove the worker service
+launchctl unload ~/Library/LaunchAgents/com.uw.watchtower.worker.plist
+rm -f ~/Library/LaunchAgents/com.uw.watchtower.worker.plist
+
+# 2. Remove the conda environment
+mamba env remove -n watchtower --yes
+
+# 3. Remove the Nextflow binary and cache
+sudo rm -f /usr/local/bin/nextflow
+rm -rf ~/.nextflow
+
+# 4. Remove the app directory
+sudo rm -rf /opt/watchtower/app
+
+# 5. (Optional) Remove the data root — DELETES ALL DOWNLOADED DATA
+rm -rf /Volumes/omics/watchtower
+```

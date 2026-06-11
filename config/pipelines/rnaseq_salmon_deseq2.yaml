@@ -4,6 +4,9 @@ nextflow:
   main: pipelines/rnaseq/main.nf
   config: pipelines/rnaseq/nextflow.config
   profile: mac_arm64
+  # Hard ceiling (seconds) for a single pipeline run; overridable via
+  # WATCHTOWER_NEXTFLOW_TIMEOUT. Prevents a wedged run from holding the slot.
+  timeout_sec: 86400
 
 salmon:
   libtype: A
